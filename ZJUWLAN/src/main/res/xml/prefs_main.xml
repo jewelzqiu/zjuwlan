@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/login_logout">
+        <Preference
+            android:key="@string/key_ssid"
+            android:title="@string/no_ssid"
+            android:summary="@string/click_change_wifi" />
+        <Preference
+            android:key="@string/key_login_logout"
+            android:title="@string/login" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/user_info">
+        <EditTextPreference
+            android:key="@string/key_username"
+            android:title="@string/username" />
+        <EditTextPreference
+            android:key="@string/key_passowrd"
+            android:title="@string/password" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/autologin">
+        <SwitchPreference
+            android:key="@string/key_autologin"
+            android:title="@string/autologin"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

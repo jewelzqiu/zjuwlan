@@ -1,0 +1,8 @@
+<resources>
+
+    <array name="authorization_wifis">
+        <item>ZJUWLAN</item>
+        <item>CERNET</item>
+    </array>
+
+</resources>
