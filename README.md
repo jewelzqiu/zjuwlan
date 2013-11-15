@@ -1,4 +1,4 @@
-zjuwlan
+ZJUWLAN
 =======
 
-Wi-Fi auto login for ZJU users.(Supported ssid: ZJUWLAN, CERNET)
+Wi-Fi auto login Android app for ZJU users.(Supported ssid: ZJUWLAN, CERNET)
