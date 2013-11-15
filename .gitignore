@@ -17,8 +17,6 @@
 # generated files
 bin/
 gen/
-build/
-production/
 
 # Local configuration file (sdk path, etc)
 local.properties
