@@ -29,10 +29,6 @@ public class MainFragment extends PreferenceFragment implements
         SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = "MainFragment";
-    private static final long LOGIN_TIMEOUT = 4000;
-    private static final long LOGOUT_TIMEOUT = 4000;
-    private static final long FIRST_TEST_NETWORK_TIMEOUT = 3000;
-    private static final long SECOND_TEST_NETWORK_TIMEOUT = 3000;
 
     private Context mContext;
 
@@ -142,20 +138,16 @@ public class MainFragment extends PreferenceFragment implements
         SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
         // auto-login
         boolean autoLogin = sharedPreferences.getBoolean(
-                getResources().getString(R.string.key_autologin), true
+                getString(R.string.key_autologin), true
         );
         autoLoginPref.setChecked(autoLogin);
 
         // username
-        username = sharedPreferences.getString(
-                getResources().getString(R.string.key_username), ""
-        );
+        username = sharedPreferences.getString(getString(R.string.key_username), "");
         usernamePref.setSummary(username);
 
         //password
-        password = sharedPreferences.getString(
-                getResources().getString(R.string.key_passowrd), ""
-        );
+        password = sharedPreferences.getString(getString(R.string.key_passowrd), "");
         char[] charArray = password.toCharArray();
         for (int i = 0; i < charArray.length; i++) {
             charArray[i] = '*';
@@ -187,7 +179,7 @@ public class MainFragment extends PreferenceFragment implements
         Log.v(TAG, "connect to: " + ssid);
         ssidPref.setTitle(getResources().getString(R.string.ssid) + ssid);
 
-        if (!needAuthorization(ssid)) {
+        if (!NetworkUtil.needAuthorization(mContext, ssid)) {
             loginPref.setEnabled(false);
             return;
         }
@@ -197,17 +189,6 @@ public class MainFragment extends PreferenceFragment implements
         if (connect) {
             new TestWifiAsyncTask().execute(ssid);
         }
-    }
-
-    private boolean needAuthorization(String ssid) {
-        String[] authorizationWifis = this.getResources().getStringArray(
-                R.array.authorization_wifis);
-        for (String wifi : authorizationWifis) {
-            if (wifi.equalsIgnoreCase(ssid)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void connect(String ssid) {
@@ -288,7 +269,7 @@ public class MainFragment extends PreferenceFragment implements
         @Override
         protected Boolean doInBackground(String... params) {
             ssid = params[0];
-            return NetworkUtil.connectedToInternet(FIRST_TEST_NETWORK_TIMEOUT);
+            return NetworkUtil.connectedToInternet(NetworkUtil.FIRST_TEST_NETWORK_TIMEOUT);
         }
 
         @Override
@@ -327,55 +308,22 @@ public class MainFragment extends PreferenceFragment implements
             String username = params[1];
             String password = params[2];
 
-            String urlStr = "http://10.50.200.245/cgi-bin/srun_portal";
             String content = "action=login&username=" + username +
                     "&password="  + password +
                     "&ac_id=3&is_ldap=1&type=2&local_auth=1";
 
-            Log.d(TAG, "login url: " + urlStr);
-            String loginResult = login(urlStr, content);
+            Log.d(TAG, "login url: " + NetworkUtil.LoginURL);
+            String loginResult = NetworkUtil.login(NetworkUtil.LoginURL, content);
 
             if ("online_num_error".equals(loginResult)) {
-                if (forceLogout(username, password)) {
+                if (NetworkUtil.forceLogout(username, password)) {
                     // try again
-                    loginResult = login(urlStr, content);
+                    loginResult = NetworkUtil.login(NetworkUtil.LoginURL, content);
                     Log.d(TAG, "try again result: " + loginResult);
                 }
             }
 
             return loginResult;
-        }
-
-        private String login(String urlStr, String content) {
-            String loginResult = NetworkUtil.getHttpResponse(
-                    urlStr, "POST", content, 3000, 3000, LOGIN_TIMEOUT);
-            if (null == loginResult)
-                return null;
-
-            if (loginResult.contains("login_ok")) {
-                loginResult = "login_ok";
-            }
-
-            if (!loginResult.equals("login_ok")) {
-                // Maybe there are bugs in the system of  wireless network
-                // authorization, that is, we can connect to Internet when login
-                // result is not OK.
-                if (NetworkUtil.connectedToInternet(SECOND_TEST_NETWORK_TIMEOUT)) {
-                    loginResult = "login_ok";
-                }
-            }
-            return loginResult;
-        }
-
-        private boolean forceLogout(String username, String password) {
-            String urlStr =
-                    "http://10.50.200.245/cgi-bin/srun_portal";
-            String content = "action=logout&uid=-1&username=" + username +
-                    "&password=" + password + "&force=1&type=2";
-            String result = NetworkUtil.getHttpResponse(urlStr, "POST", content, 5000, 3000,
-                    LOGOUT_TIMEOUT);
-            Log.d(TAG, "force logout res: " + result);
-            return "logout_ok".equals(result);
         }
 
 //        @Override
