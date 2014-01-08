@@ -1,6 +1,5 @@
 package com.jewelzqiu.zjuwlan;
 
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -18,7 +17,6 @@ import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.SwitchPreference;
-import android.provider.SyncStateContract;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -41,6 +39,7 @@ public class MainFragment extends PreferenceFragment implements
     private String username;
     private String password;
     private String ssid;
+    private boolean autoLogin;
 
     private WifiReceiver wifiReceiver;
 
@@ -63,10 +62,10 @@ public class MainFragment extends PreferenceFragment implements
                     Log.d(TAG, "logout result: " + res);
                     if (null != res) {
                         if (res.equals("logout_ok")) {
-                            res = getString(R.string.login_ok);
+                            res = getString(R.string.logout_ok);
                         }
                     } else {
-                        res = getString(R.string.login_fail);
+                        res = getString(R.string.logout_fail);
                     }
                     Toast.makeText(mContext, res, Toast.LENGTH_SHORT).show();
                     onLogout();
@@ -112,7 +111,7 @@ public class MainFragment extends PreferenceFragment implements
         wifiManager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
         connectivityManager =
                 (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        update(true);
+        update();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
@@ -131,15 +130,13 @@ public class MainFragment extends PreferenceFragment implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        update(true);
+        update();
     }
 
-    private void update(boolean connect) {
+    private void update() {
         SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
         // auto-login
-        boolean autoLogin = sharedPreferences.getBoolean(
-                getString(R.string.key_autologin), true
-        );
+        autoLogin = sharedPreferences.getBoolean(getString(R.string.key_autologin), true);
         autoLoginPref.setChecked(autoLogin);
 
         // username
@@ -186,25 +183,16 @@ public class MainFragment extends PreferenceFragment implements
 
         loginPref.setEnabled(true);
 
-        if (connect) {
-            new TestWifiAsyncTask().execute(ssid);
-        }
+        new TestWifiAsyncTask().execute(ssid, "false");
     }
 
     private void connect(String ssid) {
-        SharedPreferences pref = getPreferenceManager().getSharedPreferences();
-        boolean loginOnConnect =
-                pref.getBoolean(getResources().getString(R.string.key_autologin), true);
-        if (!loginOnConnect) {
-            return;
-        }
-
         requestAuthorization(ssid);
     }
 
     private void requestAuthorization(String ssid) {
         if (username == null || username.equals("")) {
-            Toast.makeText(mContext, "请先输入帐号密码", Toast.LENGTH_SHORT);
+            Toast.makeText(mContext, "请先输入帐号密码", Toast.LENGTH_SHORT).show();
             return;
         }
         new LoginAsyncTask().execute(ssid, username, password);
@@ -212,8 +200,8 @@ public class MainFragment extends PreferenceFragment implements
 
     private void onLogin() {
         Log.d(TAG, "login ok");
-        Toast.makeText(mContext, R.string.login_ok, Toast.LENGTH_SHORT);
-        loginPref.setTitle(getResources().getString(R.string.logout));
+        Toast.makeText(mContext, R.string.login_ok, Toast.LENGTH_SHORT).show();
+        loginPref.setTitle(R.string.logout);
         loginPref.setEnabled(true);
     }
 
@@ -235,7 +223,7 @@ public class MainFragment extends PreferenceFragment implements
     }
 
     private void onLogout() {
-        loginPref.setTitle(getString(R.string.login));
+        loginPref.setTitle(R.string.login);
         loginPref.setEnabled(true);
     }
 
@@ -254,7 +242,7 @@ public class MainFragment extends PreferenceFragment implements
         public boolean onPreferenceClick(Preference preference) {
             String text = preference.getTitle().toString();
             if (text.equals(getString(R.string.login))) {
-                new TestWifiAsyncTask().execute(ssid);
+                new TestWifiAsyncTask().execute(ssid, "true");
             } else if (text.equals(getString(R.string.logout))) {
                 logout();
             }
@@ -265,10 +253,12 @@ public class MainFragment extends PreferenceFragment implements
     private class TestWifiAsyncTask extends AsyncTask<String, Void, Boolean> {
 
         private String ssid;
+        private boolean connect;
 
         @Override
         protected Boolean doInBackground(String... params) {
             ssid = params[0];
+            connect = "true".equals(params[1]);
             return NetworkUtil.connectedToInternet(NetworkUtil.FIRST_TEST_NETWORK_TIMEOUT);
         }
 
@@ -278,7 +268,10 @@ public class MainFragment extends PreferenceFragment implements
             if (result) {
                 onLogin();
             } else {
-                connect(ssid);
+                loginPref.setTitle(R.string.login);
+                if (autoLogin || connect) {
+                    connect(ssid);
+                }
             }
         }
     }
@@ -337,7 +330,7 @@ public class MainFragment extends PreferenceFragment implements
             if (null != result && result.equals("login_ok")) {
                 onLogin();
             } else {
-                Toast.makeText(mContext, result, Toast.LENGTH_SHORT);
+                Toast.makeText(mContext, result, Toast.LENGTH_SHORT).show();
             }
 //            if (null != WifiLoginActivity.this
 //                    && !WifiLoginActivity.this.isFinishing()) {
@@ -354,14 +347,14 @@ public class MainFragment extends PreferenceFragment implements
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        update(false);
+                        update();
                     }
                 }, 200);
             } else if (intent.getAction().equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        update(true);
+                        update();
                     }
                 }, 200);
             }
