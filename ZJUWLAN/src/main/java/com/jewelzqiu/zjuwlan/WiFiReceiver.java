@@ -71,7 +71,10 @@ public class WiFiReceiver extends BroadcastReceiver {
             return;
         }
 
-        if (testWifiTask.getStatus() != AsyncTask.Status.RUNNING) {
+        if (testWifiTask.getStatus() == AsyncTask.Status.FINISHED) {
+            testWifiTask = new TestWifiAsyncTask();
+            testWifiTask.execute();
+        } else if (testWifiTask.getStatus() == AsyncTask.Status.PENDING) {
             testWifiTask.execute();
         }
     }
@@ -89,7 +92,10 @@ public class WiFiReceiver extends BroadcastReceiver {
             if (result) {
                 System.out.println("already connected");
             } else {
-                if (loginTask.getStatus() != Status.RUNNING) {
+                if (loginTask.getStatus() == Status.FINISHED) {
+                    loginTask = new LoginAsyncTask();
+                    loginTask.execute();
+                } else if (loginTask.getStatus() == Status.FINISHED) {
                     loginTask.execute();
                 }
             }

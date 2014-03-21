@@ -71,7 +71,10 @@ public class MainFragment extends PreferenceFragment implements
                 case MSG_TO_LOGIN:
                     Log.d(TAG, "username: " + username);
                     Log.d(TAG, "password: " + password);
-                    if (loginTask.getStatus() != AsyncTask.Status.RUNNING) {
+                    if (loginTask.getStatus() == AsyncTask.Status.FINISHED) {
+                        loginTask = new LoginAsyncTask();
+                        loginTask.execute(ssid, username, password);
+                    } else if (loginTask.getStatus() == AsyncTask.Status.PENDING) {
                         loginTask.execute(ssid, username, password);
                     }
                     break;
@@ -219,7 +222,10 @@ public class MainFragment extends PreferenceFragment implements
 
         loginPref.setEnabled(true);
 
-        if (testWifiTask.getStatus() != AsyncTask.Status.RUNNING) {
+        if (testWifiTask.getStatus() == AsyncTask.Status.FINISHED) {
+            testWifiTask = new TestWifiAsyncTask();
+            testWifiTask.execute(ssid, "false");
+        } else if (testWifiTask.getStatus() == AsyncTask.Status.PENDING) {
             testWifiTask.execute(ssid, "false");
         }
 
@@ -235,7 +241,10 @@ public class MainFragment extends PreferenceFragment implements
             Toast.makeText(mContext, "请先输入帐号密码", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (loginTask.getStatus() != AsyncTask.Status.RUNNING) {
+        if (loginTask.getStatus() == AsyncTask.Status.FINISHED) {
+            loginTask = new LoginAsyncTask();
+            loginTask.execute(ssid, username, password);
+        } else if (loginTask.getStatus() == AsyncTask.Status.PENDING) {
             loginTask.execute(ssid, username, password);
         }
     }
@@ -284,7 +293,10 @@ public class MainFragment extends PreferenceFragment implements
         public boolean onPreferenceClick(Preference preference) {
             String text = preference.getTitle().toString();
             if (text.equals(getString(R.string.login))) {
-                if (testWifiTask.getStatus() != AsyncTask.Status.RUNNING) {
+                if (testWifiTask.getStatus() == AsyncTask.Status.FINISHED) {
+                    testWifiTask = new TestWifiAsyncTask();
+                    testWifiTask.execute(ssid, "true");
+                } else if (testWifiTask.getStatus() == AsyncTask.Status.PENDING) {
                     testWifiTask.execute(ssid, "true");
                 }
             } else if (text.equals(getString(R.string.logout))) {
