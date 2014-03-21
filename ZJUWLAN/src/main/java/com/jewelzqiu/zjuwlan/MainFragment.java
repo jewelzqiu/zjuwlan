@@ -16,6 +16,7 @@ import android.os.Message;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
 import android.preference.SwitchPreference;
 import android.util.Log;
 import android.widget.Toast;
@@ -31,23 +32,38 @@ public class MainFragment extends PreferenceFragment implements
     private Context mContext;
 
     private Preference ssidPref;
+
     private Preference loginPref;
+
     private EditTextPreference usernamePref;
+
     private EditTextPreference passwordPref;
+
     private SwitchPreference autoLoginPref;
 
     private String username;
+
     private String password;
+
     private String ssid;
+
     private boolean autoLogin;
 
     private WifiReceiver wifiReceiver;
 
     private WifiManager wifiManager;
+
     private ConnectivityManager connectivityManager;
 
     private final int MSG_TO_LOGIN = 0;
+
     private final int MSG_LOGOUT_RESULT = 1;
+
+    private boolean isRunning = false;
+
+    private TestWifiAsyncTask testWifiTask = new TestWifiAsyncTask();
+
+    private LoginAsyncTask loginTask = new LoginAsyncTask();
 
     private Handler handler = new Handler() {
         public void handleMessage(Message msg) {
@@ -55,7 +71,9 @@ public class MainFragment extends PreferenceFragment implements
                 case MSG_TO_LOGIN:
                     Log.d(TAG, "username: " + username);
                     Log.d(TAG, "password: " + password);
-                    new LoginAsyncTask().execute(ssid, username, password);
+                    if (loginTask.getStatus() != AsyncTask.Status.RUNNING) {
+                        loginTask.execute(ssid, username, password);
+                    }
                     break;
                 case MSG_LOGOUT_RESULT:
                     String res = (String) msg.obj;
@@ -134,7 +152,21 @@ public class MainFragment extends PreferenceFragment implements
     }
 
     private void update() {
-        SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
+        if (isRunning) {
+            return;
+        }
+        isRunning = true;
+        PreferenceManager preferenceManager = getPreferenceManager();
+        if (preferenceManager == null) {
+            isRunning = false;
+            return;
+        }
+        SharedPreferences sharedPreferences = preferenceManager.getSharedPreferences();
+        if (sharedPreferences == null) {
+            isRunning = false;
+            return;
+        }
+
         // auto-login
         autoLogin = sharedPreferences.getBoolean(getString(R.string.key_autologin), true);
         autoLoginPref.setChecked(autoLogin);
@@ -156,12 +188,14 @@ public class MainFragment extends PreferenceFragment implements
                 networkInfo.getType() != ConnectivityManager.TYPE_WIFI) {
             ssidPref.setTitle(R.string.no_ssid);
             loginPref.setEnabled(false);
+            isRunning = false;
             return;
         }
 
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         ssid = wifiInfo.getSSID();
         if (null == ssid || ssid.length() < 1) {
+            isRunning = false;
             return;
         }
 
@@ -170,6 +204,7 @@ public class MainFragment extends PreferenceFragment implements
         if (ssid.charAt(0) == '\"' && ssid.charAt(ssid.length() - 1) == '\"') {
             ssid = ssid.substring(1, ssid.length() - 1);
             if (ssid.length() < 1) {
+                isRunning = false;
                 return;
             }
         }
@@ -178,12 +213,17 @@ public class MainFragment extends PreferenceFragment implements
 
         if (!NetworkUtil.needAuthorization(mContext, ssid)) {
             loginPref.setEnabled(false);
+            isRunning = false;
             return;
         }
 
         loginPref.setEnabled(true);
 
-        new TestWifiAsyncTask().execute(ssid, "false");
+        if (testWifiTask.getStatus() != AsyncTask.Status.RUNNING) {
+            testWifiTask.execute(ssid, "false");
+        }
+
+        isRunning = false;
     }
 
     private void connect(String ssid) {
@@ -195,7 +235,9 @@ public class MainFragment extends PreferenceFragment implements
             Toast.makeText(mContext, "请先输入帐号密码", Toast.LENGTH_SHORT).show();
             return;
         }
-        new LoginAsyncTask().execute(ssid, username, password);
+        if (loginTask.getStatus() != AsyncTask.Status.RUNNING) {
+            loginTask.execute(ssid, username, password);
+        }
     }
 
     private void onLogin() {
@@ -242,7 +284,9 @@ public class MainFragment extends PreferenceFragment implements
         public boolean onPreferenceClick(Preference preference) {
             String text = preference.getTitle().toString();
             if (text.equals(getString(R.string.login))) {
-                new TestWifiAsyncTask().execute(ssid, "true");
+                if (testWifiTask.getStatus() != AsyncTask.Status.RUNNING) {
+                    testWifiTask.execute(ssid, "true");
+                }
             } else if (text.equals(getString(R.string.logout))) {
                 logout();
             }
@@ -253,6 +297,7 @@ public class MainFragment extends PreferenceFragment implements
     private class TestWifiAsyncTask extends AsyncTask<String, Void, Boolean> {
 
         private String ssid;
+
         private boolean connect;
 
         @Override
@@ -277,6 +322,7 @@ public class MainFragment extends PreferenceFragment implements
     }
 
     class LoginAsyncTask extends AsyncTask<String, Integer, String> {
+
         private String ssid;
 
 //        @Override
@@ -302,7 +348,7 @@ public class MainFragment extends PreferenceFragment implements
             String password = params[2];
 
             String content = "action=login&username=" + username +
-                    "&password="  + password +
+                    "&password=" + password +
                     "&ac_id=3&is_ldap=1&type=2&local_auth=1";
 
             Log.d(TAG, "login url: " + NetworkUtil.LoginURL);
@@ -340,6 +386,7 @@ public class MainFragment extends PreferenceFragment implements
     }
 
     private class WifiReceiver extends BroadcastReceiver {
+
         @Override
         public void onReceive(Context context, Intent intent) {
 //            Handler handler = new Handler();

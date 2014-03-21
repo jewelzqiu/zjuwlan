@@ -11,7 +11,6 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.widget.Toast;
 
 /**
  * Created by jewelzqiu on 11/18/13.
@@ -23,6 +22,9 @@ public class WiFiReceiver extends BroadcastReceiver {
     private static String ssid;
     private static String username;
     private static String password;
+
+    private TestWifiAsyncTask testWifiTask = new TestWifiAsyncTask();
+    private LoginAsyncTask loginTask = new LoginAsyncTask();
 
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, intent.getAction());
@@ -69,7 +71,9 @@ public class WiFiReceiver extends BroadcastReceiver {
             return;
         }
 
-        new TestWifiAsyncTask().execute();
+        if (testWifiTask.getStatus() != AsyncTask.Status.RUNNING) {
+            testWifiTask.execute();
+        }
     }
 
     private class TestWifiAsyncTask extends AsyncTask<String, Void, Boolean> {
@@ -85,7 +89,9 @@ public class WiFiReceiver extends BroadcastReceiver {
             if (result) {
                 System.out.println("already connected");
             } else {
-                new LoginAsyncTask().execute();
+                if (loginTask.getStatus() != Status.RUNNING) {
+                    loginTask.execute();
+                }
             }
         }
     }
