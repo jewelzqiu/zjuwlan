@@ -5,6 +5,10 @@ import android.os.Bundle;
 
 public class MainActivity extends Activity {
 
+    public static final String ACTION_LOGIN_SUCCESS = "com.jewelzqiu.zjuwlan.loginsuccess";
+
+    public static final String ACTION_LOGIN_FAILED = "com.jewelzqiu.zjuwlan.loginfailed";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

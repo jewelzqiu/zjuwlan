@@ -12,7 +12,6 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
@@ -55,45 +54,11 @@ public class MainFragment extends PreferenceFragment implements
 
     private ConnectivityManager connectivityManager;
 
-    private final int MSG_TO_LOGIN = 0;
-
-    private final int MSG_LOGOUT_RESULT = 1;
-
-    private boolean isRunning = false;
-
     private TestWifiAsyncTask testWifiTask = new TestWifiAsyncTask();
 
     private LoginAsyncTask loginTask = new LoginAsyncTask();
 
-    private Handler handler = new Handler() {
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MSG_TO_LOGIN:
-                    Log.d(TAG, "username: " + username);
-                    Log.d(TAG, "password: " + password);
-                    if (loginTask.getStatus() == AsyncTask.Status.FINISHED) {
-                        loginTask = new LoginAsyncTask();
-                        loginTask.execute(ssid, username, password);
-                    } else if (loginTask.getStatus() == AsyncTask.Status.PENDING) {
-                        loginTask.execute(ssid, username, password);
-                    }
-                    break;
-                case MSG_LOGOUT_RESULT:
-                    String res = (String) msg.obj;
-                    Log.d(TAG, "logout result: " + res);
-                    if (null != res) {
-                        if (res.equals("logout_ok")) {
-                            res = getString(R.string.logout_ok);
-                        }
-                    } else {
-                        res = getString(R.string.logout_fail);
-                    }
-                    Toast.makeText(mContext, res, Toast.LENGTH_SHORT).show();
-                    onLogout();
-                    break;
-            }
-        }
-    };
+    private Handler handler = new Handler();
 
     public MainFragment() {
 
@@ -143,8 +108,8 @@ public class MainFragment extends PreferenceFragment implements
 
     @Override
     public void onPause() {
-        getPreferenceManager().getSharedPreferences()
-                .unregisterOnSharedPreferenceChangeListener(this);
+        getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(
+                this);
         mContext.unregisterReceiver(wifiReceiver);
         super.onPause();
     }
@@ -155,18 +120,12 @@ public class MainFragment extends PreferenceFragment implements
     }
 
     private void update() {
-        if (isRunning) {
-            return;
-        }
-        isRunning = true;
         PreferenceManager preferenceManager = getPreferenceManager();
         if (preferenceManager == null) {
-            isRunning = false;
             return;
         }
         SharedPreferences sharedPreferences = preferenceManager.getSharedPreferences();
         if (sharedPreferences == null) {
-            isRunning = false;
             return;
         }
 
@@ -191,14 +150,12 @@ public class MainFragment extends PreferenceFragment implements
                 networkInfo.getType() != ConnectivityManager.TYPE_WIFI) {
             ssidPref.setTitle(R.string.no_ssid);
             loginPref.setEnabled(false);
-            isRunning = false;
             return;
         }
 
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         ssid = wifiInfo.getSSID();
         if (null == ssid || ssid.length() < 1) {
-            isRunning = false;
             return;
         }
 
@@ -207,7 +164,6 @@ public class MainFragment extends PreferenceFragment implements
         if (ssid.charAt(0) == '\"' && ssid.charAt(ssid.length() - 1) == '\"') {
             ssid = ssid.substring(1, ssid.length() - 1);
             if (ssid.length() < 1) {
-                isRunning = false;
                 return;
             }
         }
@@ -216,7 +172,6 @@ public class MainFragment extends PreferenceFragment implements
 
         if (!NetworkUtil.needAuthorization(mContext, ssid)) {
             loginPref.setEnabled(false);
-            isRunning = false;
             return;
         }
 
@@ -224,28 +179,9 @@ public class MainFragment extends PreferenceFragment implements
 
         if (testWifiTask.getStatus() == AsyncTask.Status.FINISHED) {
             testWifiTask = new TestWifiAsyncTask();
-            testWifiTask.execute(ssid, "false");
+            testWifiTask.execute(false);
         } else if (testWifiTask.getStatus() == AsyncTask.Status.PENDING) {
-            testWifiTask.execute(ssid, "false");
-        }
-
-        isRunning = false;
-    }
-
-    private void connect(String ssid) {
-        requestAuthorization(ssid);
-    }
-
-    private void requestAuthorization(String ssid) {
-        if (username == null || username.equals("")) {
-            Toast.makeText(mContext, "请先输入帐号密码", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (loginTask.getStatus() == AsyncTask.Status.FINISHED) {
-            loginTask = new LoginAsyncTask();
-            loginTask.execute(ssid, username, password);
-        } else if (loginTask.getStatus() == AsyncTask.Status.PENDING) {
-            loginTask.execute(ssid, username, password);
+            testWifiTask.execute(false);
         }
     }
 
@@ -254,23 +190,6 @@ public class MainFragment extends PreferenceFragment implements
         Toast.makeText(mContext, R.string.login_ok, Toast.LENGTH_SHORT).show();
         loginPref.setTitle(R.string.logout);
         loginPref.setEnabled(true);
-    }
-
-    private void logout() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                String urlStr =
-                        "http://10.50.200.245/cgi-bin/srun_portal";
-                String content = "action=logout&type=2";
-                String response
-                        = NetworkUtil.getHttpResponse(urlStr, "POST", content, 2000, 2000);
-                Message msg = new Message();
-                msg.what = MSG_LOGOUT_RESULT;
-                msg.obj = response;
-                handler.sendMessage(msg);
-            }
-        }).start();
     }
 
     private void onLogout() {
@@ -291,31 +210,31 @@ public class MainFragment extends PreferenceFragment implements
 
         @Override
         public boolean onPreferenceClick(Preference preference) {
-            String text = preference.getTitle().toString();
+            String text = (String) loginPref.getTitle();
+            if (text == null) {
+                return true;
+            }
             if (text.equals(getString(R.string.login))) {
                 if (testWifiTask.getStatus() == AsyncTask.Status.FINISHED) {
                     testWifiTask = new TestWifiAsyncTask();
-                    testWifiTask.execute(ssid, "true");
+                    testWifiTask.execute(true);
                 } else if (testWifiTask.getStatus() == AsyncTask.Status.PENDING) {
-                    testWifiTask.execute(ssid, "true");
+                    testWifiTask.execute(true);
                 }
             } else if (text.equals(getString(R.string.logout))) {
-                logout();
+                new LogoutAsyncTask().execute();
             }
             return true;
         }
     }
 
-    private class TestWifiAsyncTask extends AsyncTask<String, Void, Boolean> {
-
-        private String ssid;
+    private class TestWifiAsyncTask extends AsyncTask<Boolean, Void, Boolean> {
 
         private boolean connect;
 
         @Override
-        protected Boolean doInBackground(String... params) {
-            ssid = params[0];
-            connect = "true".equals(params[1]);
+        protected Boolean doInBackground(Boolean... params) {
+            connect = params[0];
             return NetworkUtil.connectedToInternet(NetworkUtil.FIRST_TEST_NETWORK_TIMEOUT);
         }
 
@@ -327,61 +246,43 @@ public class MainFragment extends PreferenceFragment implements
             } else {
                 loginPref.setTitle(R.string.login);
                 if (autoLogin || connect) {
-                    connect(ssid);
+                    if (username == null || username.equals("")) {
+                        Toast.makeText(mContext, "请先输入帐号密码", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (loginTask.getStatus() == AsyncTask.Status.FINISHED) {
+                        loginTask = new LoginAsyncTask();
+                        loginTask.execute();
+                    } else if (loginTask.getStatus() == AsyncTask.Status.PENDING) {
+                        loginTask.execute();
+                    }
                 }
             }
         }
     }
 
-    class LoginAsyncTask extends AsyncTask<String, Integer, String> {
-
-        private String ssid;
-
-//        @Override
-//        protected void onPreExecute() {
-//            if (mDialog == null) {
-//                mDialog = new ProgressDialog(WifiLoginActivity.this, 0);
-//            }
-//            mDialog.setMessage(WifiLoginActivity.this.getString(
-//                    R.string.logining));
-//            mDialog.setIndeterminate(true);
-//            if (null != WifiLoginActivity.this
-//                    && !WifiLoginActivity.this.isFinishing()) {
-//                if (!mDialog.isShowing()) {
-//                    mDialog.show();
-//                }
-//            }
-//        }
+    private class LoginAsyncTask extends AsyncTask<Void, Integer, String> {
 
         @Override
-        protected String doInBackground(String... params) {
-            ssid = params[0];
-            String username = params[1];
-            String password = params[2];
+        protected String doInBackground(Void... voids) {
 
             String content = "action=login&username=" + username +
                     "&password=" + password +
                     "&ac_id=3&is_ldap=1&type=2&local_auth=1";
 
-            Log.d(TAG, "login url: " + NetworkUtil.LoginURL);
-            String loginResult = NetworkUtil.login(NetworkUtil.LoginURL, content);
+            Log.d(TAG, "login url: " + NetworkUtil.LOGIN_LOGOUT_URL);
+            String loginResult = NetworkUtil.login(NetworkUtil.LOGIN_LOGOUT_URL, content);
 
             if ("online_num_error".equals(loginResult)) {
                 if (NetworkUtil.forceLogout(username, password)) {
                     // try again
-                    loginResult = NetworkUtil.login(NetworkUtil.LoginURL, content);
+                    loginResult = NetworkUtil.login(NetworkUtil.LOGIN_LOGOUT_URL, content);
                     Log.d(TAG, "try again result: " + loginResult);
                 }
             }
 
             return loginResult;
         }
-
-//        @Override
-//        protected void onProgressUpdate(Integer... progress) {
-//            mDialog.setMessage(
-//                    WifiLoginActivity.this.getString(R.string.testing_wifi));
-//        }
 
         @Override
         protected void onPostExecute(String result) {
@@ -390,10 +291,30 @@ public class MainFragment extends PreferenceFragment implements
             } else {
                 Toast.makeText(mContext, result, Toast.LENGTH_SHORT).show();
             }
-//            if (null != WifiLoginActivity.this
-//                    && !WifiLoginActivity.this.isFinishing()) {
-//                mDialog.dismiss();
-//            }
+        }
+    }
+
+    private class LogoutAsyncTask extends AsyncTask<Void, Void, String> {
+
+        @Override
+        protected String doInBackground(Void... voids) {
+            String content = "action=logout&type=2";
+            return NetworkUtil
+                    .getHttpResponse(NetworkUtil.LOGIN_LOGOUT_URL, "POST", content, 2000, 2000);
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Log.d(TAG, "logout result: " + result);
+            if (null != result) {
+                if (result.equals("logout_ok")) {
+                    result = getString(R.string.logout_ok);
+                }
+            } else {
+                result = getString(R.string.logout_fail);
+            }
+            Toast.makeText(mContext, result, Toast.LENGTH_SHORT).show();
+            onLogout();
         }
     }
 

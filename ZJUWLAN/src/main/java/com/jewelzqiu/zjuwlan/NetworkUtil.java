@@ -17,13 +17,13 @@ import java.net.URL;
  */
 public class NetworkUtil {
 
-    private static final String TAG = "MainFragment";
+    private static final String TAG = "NetworkUtil";
 
     public static final long LOGIN_TIMEOUT = 4000;
     public static final long LOGOUT_TIMEOUT = 4000;
     public static final long FIRST_TEST_NETWORK_TIMEOUT = 3000;
     public static final long SECOND_TEST_NETWORK_TIMEOUT = 3000;
-    public static final String LoginURL = "http://10.50.200.245/cgi-bin/srun_portal";
+    public static final String LOGIN_LOGOUT_URL = "http://net.zju.edu.cn/cgi-bin/srun_portal";
     public static final String TestURL = "http://www.apple.com/library/test/success.html";
 
     private static String HttpResponse;
@@ -63,7 +63,7 @@ public class NetworkUtil {
     public static boolean forceLogout(String username, String password) {
         String content = "action=logout&uid=-1&username=" + username +
                 "&password=" + password + "&force=1&type=2";
-        String result = getHttpResponse(LoginURL, "POST", content, 5000, 3000, LOGOUT_TIMEOUT);
+        String result = getHttpResponse(LOGIN_LOGOUT_URL, "POST", content, 5000, 3000, LOGOUT_TIMEOUT);
         Log.d(TAG, "force logout res: " + result);
         return "logout_ok".equals(result);
     }
