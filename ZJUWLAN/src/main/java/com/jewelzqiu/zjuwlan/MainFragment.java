@@ -92,6 +92,7 @@ public class MainFragment extends PreferenceFragment implements
     @Override
     public void onResume() {
         super.onResume();
+        mContext = getActivity();
         getPreferenceManager().getSharedPreferences()
                 .registerOnSharedPreferenceChangeListener(this);
         wifiManager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
