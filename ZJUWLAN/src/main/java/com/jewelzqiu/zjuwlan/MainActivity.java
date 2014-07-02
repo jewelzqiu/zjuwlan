@@ -20,6 +20,6 @@ public class MainActivity extends Activity {
                     .commit();
         }
 
-        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
+//        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
     }
 }
