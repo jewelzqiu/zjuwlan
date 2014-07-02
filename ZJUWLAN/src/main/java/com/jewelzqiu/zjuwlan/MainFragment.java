@@ -1,5 +1,6 @@
 package com.jewelzqiu.zjuwlan;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -64,8 +65,14 @@ public class MainFragment extends PreferenceFragment implements
 
     }
 
-    public MainFragment(Context context) {
-        mContext = context;
+//    public MainFragment(Context context) {
+//        mContext = context;
+//    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mContext = activity;
     }
 
     @Override
@@ -92,7 +99,6 @@ public class MainFragment extends PreferenceFragment implements
     @Override
     public void onResume() {
         super.onResume();
-        mContext = getActivity();
         getPreferenceManager().getSharedPreferences()
                 .registerOnSharedPreferenceChangeListener(this);
         wifiManager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
