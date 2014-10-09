@@ -17,7 +17,8 @@
             android:title="@string/username" />
         <EditTextPreference
             android:key="@string/key_passowrd"
-            android:title="@string/password" />
+            android:title="@string/password"
+            android:password="true"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/autologin">

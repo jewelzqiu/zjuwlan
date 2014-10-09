@@ -9,6 +9,7 @@
     <string name="key_ssid">ssid</string>
     <string name="ssid">当前连接： </string>
     <string name="no_ssid">当前未连接WiFi</string>
+    <string name="enabling_wifi">正在打开WiFi...</string>
     <string name="click_change_wifi">点击切换WiFi接入点</string>
     <string name="key_login_logout">login_logout</string>
     <string name="login">登录</string>

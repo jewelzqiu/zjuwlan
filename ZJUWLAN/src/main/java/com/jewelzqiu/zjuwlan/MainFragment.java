@@ -154,9 +154,11 @@ public class MainFragment extends PreferenceFragment implements
 
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
         if (null == networkInfo ||
-                networkInfo.getType() != ConnectivityManager.TYPE_WIFI) {
+                networkInfo.getType() != ConnectivityManager.TYPE_WIFI ||
+                !wifiManager.isWifiEnabled()) {
             ssidPref.setTitle(R.string.no_ssid);
             loginPref.setEnabled(false);
+            new EnableWifiAsyncTask().execute();
             return;
         }
 
@@ -232,6 +234,28 @@ public class MainFragment extends PreferenceFragment implements
                 new LogoutAsyncTask().execute();
             }
             return true;
+        }
+    }
+
+    private class EnableWifiAsyncTask extends AsyncTask<Void, Void, Boolean> {
+
+        @Override
+        protected void onPreExecute() {
+            ssidPref.setTitle(R.string.enabling_wifi);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            return wifiManager.setWifiEnabled(true);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (success) {
+                update();
+            } else {
+                ssidPref.setTitle(R.string.no_ssid);
+            }
         }
     }
 
