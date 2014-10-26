@@ -61,6 +61,8 @@ public class MainFragment extends PreferenceFragment implements
 
     private Handler handler = new Handler();
 
+    public static boolean isActive = true;
+
     public MainFragment() {
 
     }
@@ -99,6 +101,7 @@ public class MainFragment extends PreferenceFragment implements
     @Override
     public void onResume() {
         super.onResume();
+        isActive = true;
         getPreferenceManager().getSharedPreferences()
                 .registerOnSharedPreferenceChangeListener(this);
         wifiManager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
@@ -115,6 +118,7 @@ public class MainFragment extends PreferenceFragment implements
 
     @Override
     public void onPause() {
+        isActive = false;
         getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(
                 this);
         mContext.unregisterReceiver(wifiReceiver);
@@ -158,7 +162,9 @@ public class MainFragment extends PreferenceFragment implements
                 !wifiManager.isWifiEnabled()) {
             ssidPref.setTitle(R.string.no_ssid);
             loginPref.setEnabled(false);
-            new EnableWifiAsyncTask().execute();
+            if (isActive) {
+                new EnableWifiAsyncTask().execute();
+            }
             return;
         }
 
