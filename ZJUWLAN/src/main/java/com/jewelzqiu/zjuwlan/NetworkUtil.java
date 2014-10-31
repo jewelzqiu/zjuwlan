@@ -23,7 +23,7 @@ public class NetworkUtil {
     public static final long LOGOUT_TIMEOUT = 4000;
     public static final long FIRST_TEST_NETWORK_TIMEOUT = 3000;
     public static final long SECOND_TEST_NETWORK_TIMEOUT = 3000;
-    public static final String LOGIN_LOGOUT_URL = "http://net.zju.edu.cn/cgi-bin/srun_portal";
+    public static final String LOGIN_LOGOUT_URL = "https://net.zju.edu.cn/cgi-bin/srun_portal";
     public static final String TestURL = "http://www.apple.com/library/test/success.html";
 
     private static String HttpResponse;
